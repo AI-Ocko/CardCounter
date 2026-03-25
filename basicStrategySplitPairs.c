@@ -8,8 +8,15 @@ int main() {
 
   int dealerUpcard = (rand() % 9) + 1;
   int playerPair = (rand() % 9) + 1;
+  char printPlayerPair;
 
-  printf("You have a pair of %d's!\n", playerPair);
+  if (playerPair == 1) {
+    printPlayerPair = 'A';
+  } else {
+    printPlayerPair = playerPair;
+  }
+
+  printf("You have a pair of %d's!\n", printPlayerPair);
   printf("Dealer's up card is %d\n", dealerUpcard);
   printf("Do you split? (Y)es or (N)o: ");
   // scanf()
