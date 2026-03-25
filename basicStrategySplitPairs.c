@@ -16,7 +16,12 @@ int main() {
     printPlayerPair = playerPair;
   }
 
-  printf("You have a pair of %d's!\n", printPlayerPair);
+  if (printPlayerPair == 'A') {
+    printf("You have a pair of %c's!\n", printPlayerPair);
+  } else {
+    printf("You have a pair of %d's!\n", printPlayerPair);
+  }
+
   printf("Dealer's up card is %d\n", dealerUpcard);
   printf("Do you split? (Y)es or (N)o: ");
   // scanf()
