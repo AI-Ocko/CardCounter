@@ -46,7 +46,7 @@ int surrender[3][10] = {
     /* 16 */ {0, 0, 0, 0, 0, 0, 0, 1, 1, 1},
 };
 
-void pairSplitting() {
+int pairSplitting() {
   // Generate random pair and dealerUpCard
   int dealerUpCard = (rand() % 9) + 1;
   int playerPair = (rand() % 9) + 1;
@@ -81,8 +81,13 @@ void pairSplitting() {
   }
 
   // Get user choice
-  printf("Do you split? (Y)es or (N)o: ");
+  printf("Do you split? (Y)es,(N)o, or (Q)uit: ");
   scanf(" %c", &userAnswer);
+
+  // exit
+  if (toupper(userAnswer) == 'Q') {
+    return 0;
+  }
 
   // Check the actual correct answer
   if (PairSplitting[playerPair - 1][dealerUpCard - 1] == Y) {
@@ -97,14 +102,13 @@ void pairSplitting() {
   } else {
     printf("Incorrect!\n");
   }
+
+  return 1;
 }
 
 void pairSplittingLoop() {
   char playAgain = 'Y';
 
-  while (toupper(playAgain) == 'Y') {
-    pairSplitting();
-    printf("Play Again? (Y/N): ");
-    scanf(" %c", &playAgain);
+  while (pairSplitting()) {
   }
 }
