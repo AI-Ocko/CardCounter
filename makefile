@@ -1,2 +1,2 @@
 all:
-	gcc basicStrategySplitPairs.c pairSplitting.c -o PairSplittingTrainer
+	gcc basicStrategy.c pairSplitting.c softTotals.c -o basicstrategytrainer
