@@ -36,7 +36,7 @@ int surrender[3][10] = {
     /* 16 */ {0, 0, 0, 0, 0, 0, 0, 1, 1, 1},
 };
 
-int pairSplitting() {
+int pairSplittingTrainer() {
   // Generate random pair and dealerUpCard
   int dealerUpCard = (rand() % 9) + 1;
   int playerPair = (rand() % 9) + 1;

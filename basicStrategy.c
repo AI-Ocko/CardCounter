@@ -21,9 +21,13 @@ int main(void) {
     switch (menu_option) {
     case '1':
       srand(time(NULL));
-      pairSplittingLoop();
+      while (pairSplittingTrainer()) {
+      };
       break;
     case '2':
+      srand(time(NULL));
+      while (softTotalTrainer()) {
+      };
     case '0':
       break;
     default:

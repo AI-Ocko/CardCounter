@@ -1,8 +1,7 @@
 #ifndef BASICSTRATEGY_H
 #define BASICSTRATEGY_H
 
-int pairSplitting();
-void pairSplittingLoop();
+int pairSplittingTrainer();
 
 int softTotalTrainer();
 
