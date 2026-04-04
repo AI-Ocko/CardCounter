@@ -27,7 +27,7 @@ int surrender[3][10] = {
 int pairSplittingTrainer() {
   // Generate random pair and dealerUpCard
   int dealerUpCard = (rand() % 10) + 1;
-  int playerPair = (rand() % 9) + 1;
+  int playerPair = (rand() % 10) + 1;
 
   char printPlayerPair;
   char printDealerUpCard;
