@@ -24,7 +24,7 @@ int surrender[3][10] = {
     /* 16 */ {0, 0, 0, 0, 0, 0, 0, 1, 1, 1},
 };
 
-int pairSplittingTrainer() {
+int pairSplittingTrainer(Score *score) {
   // Generate random pair and dealerUpCard
   int dealerUpCard = (rand() % 10) + 1;
   int playerPair = (rand() % 10) + 1;
@@ -67,6 +67,8 @@ int pairSplittingTrainer() {
     return 0;
   }
 
+  score->total++;
+
   // Check the actual correct answer
   if (PairSplitting[playerPair - 1][dealerUpCard - 1] == Y) {
     correctAnswer = 'Y';
@@ -77,8 +79,9 @@ int pairSplittingTrainer() {
   // Compare
   if (correctAnswer == toupper(userAnswer)) {
     printf("Correct!\n");
+    score->correct++;
   } else {
-    printf("Incorrect!\n");
+    printf("Incorrect! Correct answer was %c\n", correctAnswer);
   }
 
   return 1;

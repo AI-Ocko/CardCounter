@@ -22,18 +22,39 @@ int main(void) {
 
     switch (menu_option) {
     case '1':
+      Score score = {0, 0};
       srand(time(NULL));
-      while (pairSplittingTrainer()) {
+      while (pairSplittingTrainer(&score)) {
+        if (score.total > 0) {
+          printf("\n--- Results ---\n");
+          printf("Score: %d / %d\n", score.correct, score.total);
+          printf("Accuracy: %.1f%%\n\n",
+                 (float)score.correct / score.total * 100);
+        }
       };
       break;
     case '2':
       srand(time(NULL));
-      while (softTotalTrainer()) {
+      while (softTotalTrainer(&score)) {
+        if (score.total > 0) {
+          printf("\n--- Results ---\n");
+          printf("Score: %d / %d\n", score.correct, score.total);
+          printf("Accuracy: %.1f%%\n\n",
+                 (float)score.correct / score.total * 100);
+        }
       };
+      break;
     case '3':
       srand(time(NULL));
-      while (hardTotalTrainer()) {
+      while (hardTotalTrainer(&score)) {
+        if (score.total > 0) {
+          printf("\n--- Results ---\n");
+          printf("Score: %d / %d\n", score.correct, score.total);
+          printf("Accuracy: %.1f%%\n\n",
+                 (float)score.correct / score.total * 100);
+        }
       };
+      break;
     case '0':
       break;
     default:

@@ -17,7 +17,7 @@ Action HardTotals[10][10] = {
     /* 16 */ {S, S, S, S, S, H, H, H, H, H},
     /* 17 */ {S, S, S, S, S, S, S, S, S, S}};
 
-int hardTotalTrainer() {
+int hardTotalTrainer(Score *score) {
   int dealerUpCard = (rand() % 10) + 1; // shifts value to A(1)-10
   int playerHardTotal =
       (rand() % 10) + 8; // shifts hardtotal to actual range 8-17
@@ -53,6 +53,9 @@ int hardTotalTrainer() {
     return 0;
   }
 
+  // Increment total number of hands played
+  score->total++;
+
   // Check correct answer
   switch (HardTotals[playerHardTotal - 8][dealerUpCard - 1]) {
   case 0:
@@ -72,8 +75,9 @@ int hardTotalTrainer() {
   // Compare
   if (correctAnswer == toupper(userAnswer)) {
     printf("Correct!\n");
+    score->correct++; // Increment correct number of answers
   } else {
-    printf("Incorrect!\n");
+    printf("Incorrect!, Correct answer was %c\n", correctAnswer);
   }
 
   return 1;

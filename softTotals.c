@@ -15,7 +15,7 @@ Action SoftTotals[8][10] = {
     /* A,8 */ {S, S, S, S, S, Ds, S, S, S, S},
     /* A,9 */ {S, S, S, S, S, S, S, S, S, S}};
 
-int softTotalTrainer() {
+int softTotalTrainer(Score *score) {
   int dealerUpCard = (rand() % 9) + 1;
   int playerSecondCard = rand() % 8;
 
@@ -49,6 +49,8 @@ int softTotalTrainer() {
     return 0;
   }
 
+  score->total++;
+
   // Check correct answer
   switch (SoftTotals[playerSecondCard][dealerUpCard - 1]) {
   case 0:
@@ -71,8 +73,9 @@ int softTotalTrainer() {
   // Compare
   if (correctAnswer == toupper(userAnswer)) {
     printf("Correct!\n");
+    score->correct++;
   } else {
-    printf("Incorrect!\n");
+    printf("Incorrect! Correct answer was %c\n", correctAnswer);
   }
 
   return 1;
