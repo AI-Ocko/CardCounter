@@ -3,9 +3,20 @@
 #include <stdlib.h>
 #include <time.h>
 
+void runTrainer(int (*trainerFunc)(Score *score)) {
+  Score score = {0, 0};
+  srand(time(NULL));
+  while (trainerFunc(&score)) {
+    if (score.total > 0) {
+      printf("\n--- Results ---\n");
+      printf("Score: %d / %d\n", score.correct, score.total);
+      printf("Accuracy: %.1f%%\n\n", (float)score.correct / score.total * 100);
+    }
+  }
+}
+
 int main(void) {
-  char menu_option, initials;
-  int difficulty;
+  char menu_option;
 
   printf("==============Basic==Strategy==Trainer=============\n");
 
@@ -22,38 +33,13 @@ int main(void) {
 
     switch (menu_option) {
     case '1':
-      Score score = {0, 0};
-      srand(time(NULL));
-      while (pairSplittingTrainer(&score)) {
-        if (score.total > 0) {
-          printf("\n--- Results ---\n");
-          printf("Score: %d / %d\n", score.correct, score.total);
-          printf("Accuracy: %.1f%%\n\n",
-                 (float)score.correct / score.total * 100);
-        }
-      };
+      runTrainer(pairSplittingTrainer);
       break;
     case '2':
-      srand(time(NULL));
-      while (softTotalTrainer(&score)) {
-        if (score.total > 0) {
-          printf("\n--- Results ---\n");
-          printf("Score: %d / %d\n", score.correct, score.total);
-          printf("Accuracy: %.1f%%\n\n",
-                 (float)score.correct / score.total * 100);
-        }
-      };
+      runTrainer(softTotalTrainer);
       break;
     case '3':
-      srand(time(NULL));
-      while (hardTotalTrainer(&score)) {
-        if (score.total > 0) {
-          printf("\n--- Results ---\n");
-          printf("Score: %d / %d\n", score.correct, score.total);
-          printf("Accuracy: %.1f%%\n\n",
-                 (float)score.correct / score.total * 100);
-        }
-      };
+      runTrainer(hardTotalTrainer);
       break;
     case '0':
       break;
