@@ -1,6 +1,6 @@
 #Compiled output
 
-/bin/basicstrategytrainer
-
-#Settings config file
-bj_settings.cfg
+/bin/*
+/obj/*
+!bin/.gitkeep
+!obj/.gitkeep
