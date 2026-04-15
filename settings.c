@@ -40,7 +40,7 @@ int loadSettings(Settings *s) {
 
 void printSettings(const Settings *s) {
   printf("Current Settings:\n");
-  printf("  Dealer soft 17 : %s\n", s->h17 ? "Hit (H17)" : "Stand (S17)");
+  printf("  Dealer Soft 17 : %s\n", s->h17 ? "Hit (H17)" : "Stand (S17)");
   printf("  Double after split : %s\n", s->das ? "Yes" : "No");
   printf("  Resplit Aces : %s\n", s->rsa ? "Yes" : "No");
   printf("  Late surrender : %s\n", s->surrender ? "Yes" : "No");
@@ -49,7 +49,8 @@ void printSettings(const Settings *s) {
 
 void settingsMenu(Settings *s) {
   char option;
-  do {
+
+  while (1) {
     printf("\n--- Settings ---\n");
     printSettings(s);
     printf("\n");
@@ -58,8 +59,9 @@ void settingsMenu(Settings *s) {
     printf("3. Toggle Resplit Aces (RSA)\n");
     printf("4. Toggle Late Surrender\n");
     printf("5. Set Number of Decks\n");
+    printf("0. Save Settings\n");
     printf("Option: ");
-    scanf("%c", &option);
+    scanf(" %c", &option);
 
     switch (option) {
     case '1':
@@ -70,20 +72,24 @@ void settingsMenu(Settings *s) {
       break;
     case '3':
       s->rsa = !s->rsa;
+      break;
     case '4':
       s->surrender = !s->surrender;
+      break;
     case '5':
       printf("Enter the number of decks (1, 2, 6, 8): ");
       scanf("%d", &s->numDecks);
       break;
     case '0':
       saveSettings(s);
-      printf("Settings saved.\n");
-      break;
+      printf("\nSettings saved.\n");
+      return;
+    case 'Q':
+    case 'q':
+      return;
     default:
       printf("Invalid option.\n");
       break;
     }
-
-  } while (option != '0');
+  }
 }
