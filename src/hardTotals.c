@@ -5,7 +5,7 @@
 
 // Dealer
 // UpCard-----A------2------3------4------5------6------7------8------9-----10
-Action HardTotals[10][10] = {
+Action HardTotals_H17[10][10] = {
     /*  8 */ {H, H, H, H, H, H, H, H, H, H},
     /*  9 */ {H, D, D, D, D, H, H, H, H, H},
     /* 10 */ {D, D, D, D, D, D, D, D, H, H},
@@ -17,7 +17,22 @@ Action HardTotals[10][10] = {
     /* 16 */ {S, S, S, S, S, H, H, H, H, H},
     /* 17 */ {S, S, S, S, S, S, S, S, S, S}};
 
-int hardTotalTrainer(Score *score) {
+Action HardTotals_S17[10][10] = {
+    /*  8 */ {H, H, H, H, H, H, H, H, H, H},
+    /*  9 */ {H, D, D, D, D, H, H, H, H, H},
+    /* 10 */ {D, D, D, D, D, D, D, D, H, H},
+    /* 11 */ {D, D, D, D, D, D, D, D, D, H},
+    /* 12 */ {H, H, S, S, S, H, H, H, H, H},
+    /* 13 */ {S, S, S, S, S, H, H, H, H, H},
+    /* 14 */ {S, S, S, S, S, H, H, H, H, H},
+    /* 15 */ {S, S, S, S, S, H, H, H, H, H},
+    /* 16 */ {S, S, S, S, S, H, H, H, H, H},
+    /* 17 */ {S, S, S, S, S, S, S, S, S, S}};
+
+int hardTotalTrainer(Score *score, Settings *settings) {
+  // Assign an Action pointer to either S17 or H17 tables
+  Action(*HardTotals)[10] = (settings->h17) ? HardTotals_H17 : HardTotals_S17;
+
   int dealerUpCard = (rand() % 10) + 1; // shifts value to A(1)-10
   int playerHardTotal =
       (rand() % 10) + 8; // shifts hardtotal to actual range 8-17

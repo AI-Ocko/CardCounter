@@ -5,7 +5,7 @@
 
 // Dealer
 // UpCard-----A------2------3------4------5------6------7------8------9-----10
-Action SoftTotals[8][10] = {
+Action SoftTotals_H17[8][10] = {
     /* A,2 */ {H, H, H, H, D, D, H, H, H, H},
     /* A,3 */ {H, H, H, H, D, D, H, H, H, H},
     /* A,5 */ {H, H, H, D, D, D, H, H, H, H},
@@ -15,7 +15,18 @@ Action SoftTotals[8][10] = {
     /* A,8 */ {S, S, S, S, S, Ds, S, S, S, S},
     /* A,9 */ {S, S, S, S, S, S, S, S, S, S}};
 
-int softTotalTrainer(Score *score) {
+Action SoftTotals_S17[8][10] = {
+    /* A,2 */ {H, H, H, H, D, D, H, H, H, H},
+    /* A,3 */ {H, H, H, H, D, D, H, H, H, H},
+    /* A,5 */ {H, H, H, D, D, D, H, H, H, H},
+    /* A,5 */ {H, H, H, D, D, D, H, H, H, H},
+    /* A,6 */ {H, H, D, D, D, D, H, H, H, H},
+    /* A,7 */ {H, S, Ds, Ds, Ds, Ds, S, S, H, H},
+    /* A,8 */ {S, S, S, S, S, S, S, S, S, S},
+    /* A,9 */ {S, S, S, S, S, S, S, S, S, S}};
+
+int softTotalTrainer(Score *score, Settings *settings) {
+  Action(*SoftTotals)[10] = (settings->h17) ? SoftTotals_H17 : SoftTotals_S17;
   int dealerUpCard = (rand() % 9) + 1;
   int playerSecondCard = rand() % 8;
 

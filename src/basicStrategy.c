@@ -4,10 +4,11 @@
 #include <stdlib.h>
 #include <time.h>
 
-void runTrainer(int (*trainerFunc)(Score *score)) {
+void runTrainer(int (*trainerFunc)(Score *score, Settings *settings),
+                Settings *settings) {
   Score score = {0, 0};
   srand(time(NULL));
-  while (trainerFunc(&score)) {
+  while (trainerFunc(&score, settings)) {
     if (score.total > 0) {
       printf("\n--- Results ---\n");
       printf("Score: %d / %d\n", score.correct, score.total);
@@ -18,7 +19,7 @@ void runTrainer(int (*trainerFunc)(Score *score)) {
 
 int main(void) {
   char menu_option;
-  Settings settings;
+  Settings settings = {0};
 
   if (!loadSettings(&settings)) {
     printf("No settings file found, using defaults.\n");
@@ -40,13 +41,13 @@ int main(void) {
 
     switch (menu_option) {
     case '1':
-      runTrainer(pairSplittingTrainer);
+      runTrainer(pairSplittingTrainer, &settings);
       break;
     case '2':
-      runTrainer(softTotalTrainer);
+      runTrainer(softTotalTrainer, &settings);
       break;
     case '3':
-      runTrainer(hardTotalTrainer);
+      runTrainer(hardTotalTrainer, &settings);
       break;
     case '4':
       settingsMenu(&settings);
