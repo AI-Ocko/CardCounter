@@ -1,5 +1,7 @@
 #include "../include/basicStrategy.h"
+#include "../include/layout.h"
 #include "../include/trainer_cardDrawFunctions.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -66,30 +68,53 @@ Card generatePlayerCardTwo(Card playerCardOne) {
   return playerCardTwo;
 }
 
-static void drawTrainerWindow(WINDOW *window, int selection,
-                              int currentWindowWidth, int playerTotal,
+static void drawTrainerWindow(WINDOW *window, int selection, int playerTotal,
                               Card dealerUpCard, Card playerCardOne,
-                              Card playerCardTwo) {
+                              Card playerCardTwo, const char *feedback) {
+  TrainerLayout layout = computeTrainerLayout(window);
+
   werase(window);
   box(window, 0, 0);
 
   // Title
-  printCenteredText(window, 0, currentWindowWidth, "Pair Splitting Trainer");
+  printCenteredText(window, layout.titleRow, "Hard Total Trainer");
 
   // Draw dealer upcard
-  drawCardBack(window, 2, ((currentWindowWidth - CARD_WIDTH) / 2) + 4);
-  drawCardTemplate(window, 2, ((currentWindowWidth - CARD_WIDTH) / 2) - 4,
+  drawCardBack(window, layout.dealerRow, layout.dealerBackCol);
+  drawCardTemplate(window, layout.dealerRow, layout.dealerFaceCol,
                    dealerUpCard);
 
-  // Draw player soft total
-  drawCardTemplate(window, 17, ((currentWindowWidth - CARD_WIDTH) / 2) - 3,
-                   playerCardOne);
-  drawCardTemplate(window, 14, ((currentWindowWidth - CARD_WIDTH) / 2) + 3,
+  // Draw player hard total
+  drawCardTemplate(window, layout.playerBackRow, layout.playerBackCol,
                    playerCardTwo);
+  drawCardTemplate(window, layout.playerFrontRow, layout.playerFrontCol,
+                   playerCardOne);
 
-  // Prompt
-  mvwprintw(window, 20, 20, "You have a total of %d.", playerTotal);
-  printCenteredText(window, 28, currentWindowWidth, "Hit, Stand, or Double?");
+  // The player's total gets its own line when there is one, and is folded
+  // into the prompt when there is not
+  char totalText[64];
+  char promptText[96];
+  const char *prompt = "Hit, Stand, or Double?";
+
+  if (layout.infoRow >= 0) {
+    snprintf(totalText, sizeof(totalText), "You have a total of %d.",
+             playerTotal);
+    printCenteredText(window, layout.infoRow, totalText);
+  } else {
+    snprintf(promptText, sizeof(promptText), "Total %d - Hit, Stand, or Double?",
+             playerTotal);
+    prompt = promptText;
+  }
+
+  // Prompt, or the result of the last answer when there is no row to spare
+  // for it of its own
+  if (feedback != NULL && layout.feedbackRow == layout.promptRow) {
+    printCenteredText(window, layout.promptRow, feedback);
+  } else {
+    printCenteredText(window, layout.promptRow, prompt);
+    if (feedback != NULL)
+      printCenteredText(window, layout.feedbackRow, feedback);
+  }
 
   // Print User Actions
   //
@@ -102,14 +127,15 @@ static void drawTrainerWindow(WINDOW *window, int selection,
     if (i > 0)
       totalWidth += textSpacing;
   }
-  int col = (currentWindowWidth - totalWidth) / 2;
+  int col = (layout.width - totalWidth) / 2;
   if (col < 0)
     col = 0;
 
   for (int i = 0; i < numberOfUserActions; i++) {
     if (i == selection)
       wattron(window, A_STANDOUT);
-    mvwaddstr(window, getmaxy(window) * 3 / 4, col, hardTotalActions[i]);
+    mvwaddnstr(window, layout.actionsRow, col, hardTotalActions[i],
+               layout.width - col);
     if (i == selection)
       wattroff(window, A_STANDOUT);
     col += (int)strlen(hardTotalActions[i]) +
@@ -118,28 +144,64 @@ static void drawTrainerWindow(WINDOW *window, int selection,
 
   // Print hints
   wattron(window, A_DIM);
-  printCenteredText(window, getmaxy(window) - 4, currentWindowWidth,
+  printCenteredText(window, layout.hintRow,
                     "h/l or left/right to move     Enter to select");
-  printCenteredText(window, getmaxy(window) - 3, currentWindowWidth,
-                    "q to quit");
+  if (layout.quitHintRow >= 0)
+    printCenteredText(window, layout.quitHintRow, "q to quit");
   wattroff(window, A_DIM);
+
   wrefresh(window);
 }
 
 int hardTotalTrainer(WINDOW *window, Score *score, Settings *settings) {
-  int selection = 0, keyPress;
+  int selection = 0, keyPress, running = 1, keepApplicationRunning = 1;
 
-  // Draw Trainer Window
+  /* While a result is on screen the trainer waits for the player to
+   * acknowledge it before dealing again.  Holding it as state rather than
+   * blocking on a nested wgetch() is what lets a resize redraw the board with
+   * the result still on it. */
+  int awaitingAcknowledgement = 0;
+  char feedback[64] = "";
+
   Card dealerUpCard = generateDealerUpCard();
   Card playerCardOne = generatePlayerCardOne();
   Card playerCardTwo = generatePlayerCardTwo(playerCardOne);
   int playerTotal = ((playerCardOne.rank + 1) + (playerCardTwo.rank + 1));
-  drawTrainerWindow(window, selection, getmaxx(window), playerTotal,
-                    dealerUpCard, playerCardOne, playerCardTwo);
   keypad(window, TRUE);
 
-  // Get User Input
-  while ((keyPress = wgetch(window)) != 'q') {
+  while (running) {
+    if (!ensureUsableTerminal()) {
+      keepApplicationRunning = 0;
+      break;
+    }
+
+    fitTrainerWindow(window);
+    drawTrainerWindow(window, selection, playerTotal, dealerUpCard,
+                      playerCardOne, playerCardTwo,
+                      awaitingAcknowledgement ? feedback : NULL);
+
+    keyPress = wgetch(window);
+
+    if (keyPress == 'q') {
+      running = 0;
+      continue;
+    }
+    if (keyPress == KEY_RESIZE) {
+      handleResize();
+      continue;
+    }
+
+    if (awaitingAcknowledgement) {
+      // Any other key clears the result and deals the next hand
+      awaitingAcknowledgement = 0;
+      dealerUpCard = generateDealerUpCard();
+      playerCardOne = generatePlayerCardOne();
+      playerCardTwo = generatePlayerCardTwo(playerCardOne);
+      playerTotal = ((playerCardOne.rank + 1) + (playerCardTwo.rank + 1));
+      selection = 0;
+      continue;
+    }
+
     switch (keyPress) {
     case 'h':
     case KEY_LEFT:
@@ -175,31 +237,23 @@ int hardTotalTrainer(WINDOW *window, Score *score, Settings *settings) {
         correctOption = 1;
         break;
       }
+
       score->total++;
       if (correctOption == selection) {
-        printCenteredText(window, 30, getmaxx(window), "Correct!");
         score->correct++;
-        wgetch(window);
+        snprintf(feedback, sizeof(feedback), "Correct!");
       } else {
-        mvwprintw(window, 30, 40, "Incorrect. The answer is: %s",
-                  hardTotalActions[correctOption]);
-        wgetch(window);
+        snprintf(feedback, sizeof(feedback), "Incorrect. The answer is: %s",
+                 hardTotalActions[correctOption]);
       }
-
-      dealerUpCard = generateDealerUpCard();
-      playerCardOne = generatePlayerCardOne();
-      playerCardTwo = generatePlayerCardTwo(playerCardOne);
-      selection = 0;
+      awaitingAcknowledgement = 1;
       break;
     }
     }
-    playerTotal = (playerCardOne.rank) + 1 + (playerCardTwo.rank + 1);
-    drawTrainerWindow(window, selection, getmaxx(window), playerTotal,
-                      dealerUpCard, playerCardOne, playerCardTwo);
   }
 
   werase(window);
   wrefresh(window);
 
-  return 1;
-};
+  return keepApplicationRunning;
+}

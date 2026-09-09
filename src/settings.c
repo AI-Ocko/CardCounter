@@ -1,4 +1,5 @@
 #include "../include/basicStrategy.h"
+#include "../include/layout.h"
 #include <curses.h>
 #include <stdlib.h>
 
@@ -80,11 +81,13 @@ static void toggleSetting(int index, Settings *settings) {
 }
 
 // Draw Settings Menu, similar to Main Menu
-void drawSettingsMenu(WINDOW *window, int selection, int currentWindowWidth,
-                      Settings *settings) {
+static void drawSettingsMenu(WINDOW *window, int selection,
+                             Settings *settings) {
+  MenuLayout layout = computeMenuLayout(window, numberOfSettingsOptions);
+
   werase(window);
   box(window, 0, 0);
-  printCenteredText(window, 0, currentWindowWidth, "Settings");
+  printCenteredText(window, layout.titleRow, "Settings");
 
   for (int i = 0; i < numberOfSettingsOptions; i++) {
     // Convert settingsOptionTitle and settingsOptionState to singular string
@@ -95,26 +98,41 @@ void drawSettingsMenu(WINDOW *window, int selection, int currentWindowWidth,
              settingsOptionState(i, settings));
     if (i == selection)
       wattron(window, A_STANDOUT);
-    printCenteredText(window, i * 2 + 2, currentWindowWidth, settingsOption);
+    printCenteredText(window, layout.firstOptionRow + i * layout.optionStride,
+                      settingsOption);
     if (i == selection)
       wattroff(window, A_STANDOUT);
   }
+
   wattron(window, A_DIM);
-  printCenteredText(window, numberOfSettingsOptions + 16, currentWindowWidth,
+  printCenteredText(window, layout.hintRow,
                     "j/k or up/down to move     Enter to toggle");
-  printCenteredText(window, numberOfSettingsOptions + 17, currentWindowWidth,
-                    "q to save and quit");
+  if (layout.quitHintRow >= 0)
+    printCenteredText(window, layout.quitHintRow, "q to save and quit");
   wattroff(window, A_DIM);
+
   wrefresh(window);
 }
 
 // Settings Menu Logic, similar to Main Menu
-void settingsMenu(WINDOW *window, int selection, int currentWindowWidth,
-                  Settings *settings) {
+int settingsMenu(WINDOW *window, int selection, Settings *settings) {
   keypad(window, TRUE);
-  int keyPress;
-  while ((keyPress = wgetch(window)) != 'q') {
-    switch (keyPress) {
+  int keyPress, inMenu = 1;
+
+  while (inMenu) {
+    if (!ensureUsableTerminal())
+      return 0;
+
+    fitMenuWindow(window, numberOfSettingsOptions);
+    drawSettingsMenu(window, selection, settings);
+
+    switch ((keyPress = wgetch(window))) {
+    case 'q':
+      inMenu = 0;
+      break;
+    case KEY_RESIZE:
+      handleResize();
+      break;
     case 'k':
     case KEY_UP:
       if (selection > 0)
@@ -130,7 +148,9 @@ void settingsMenu(WINDOW *window, int selection, int currentWindowWidth,
     case KEY_ENTER:
       toggleSetting(selection, settings);
       saveSettings(settings);
+      break;
     }
-    drawSettingsMenu(window, selection, currentWindowWidth, settings);
   }
+
+  return 1;
 }

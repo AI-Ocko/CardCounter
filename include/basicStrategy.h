@@ -29,6 +29,8 @@ typedef enum {
 
 } Action;
 
+/* Trainers return 1 to carry on, 0 when the user quit the application from
+ * the "terminal too small" screen. */
 int pairSplittingTrainer(WINDOW *window, Score *score, Settings *settings);
 int softTotalTrainer(WINDOW *window, Score *score, Settings *settings);
 int hardTotalTrainer(WINDOW *window, Score *score, Settings *settings);
@@ -49,13 +51,14 @@ void checkAndScore(WINDOW *window, Score *score, char correctAnswer,
                    char userAnswer);
 
 void loadSettings(Settings *settings);
-void drawSettingsMenu(WINDOW *window, int selection, int currentWindowWidth,
-                      Settings *settings);
-void settingsMenu(WINDOW *window, int selection, int currentWindowWidth,
-                  Settings *settings);
 
-void printCenteredText(WINDOW *window, int row, int windowWidth,
-                       const char *text);
+/* Returns 1 to carry on, 0 when the user quit the application from the
+ * "terminal too small" screen. */
+int settingsMenu(WINDOW *window, int selection, Settings *settings);
+
+/* Centre `text` on `row`, measuring against the window's current width and
+ * clipping anything that does not fit rather than wrapping it. */
+void printCenteredText(WINDOW *window, int row, const char *text);
 
 // Basic Strategy Charts
 extern Action HardTotalsH17[10][10];

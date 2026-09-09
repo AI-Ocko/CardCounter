@@ -1,6 +1,8 @@
 #include "../include/basicStrategy.h"
+#include "../include/layout.h"
 #include "../include/trainer_cardDrawFunctions.h"
 #include <curses.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -44,28 +46,37 @@ Card generateAceCard() {
   return aceCard;
 }
 
-static void drawTrainerWindow(WINDOW *window, int selection,
-                              int currentWindowWidth, Card dealerUpCard,
-                              Card playerCard, Card aceCard) {
+static void drawTrainerWindow(WINDOW *window, int selection, Card dealerUpCard,
+                              Card playerCard, Card aceCard,
+                              const char *feedback) {
+  TrainerLayout layout = computeTrainerLayout(window);
+
   werase(window);
   box(window, 0, 0);
 
   // Title
-  printCenteredText(window, 0, currentWindowWidth, "Pair Splitting Trainer");
+  printCenteredText(window, layout.titleRow, "Soft Total Trainer");
 
   // Draw dealer upcard
-  drawCardBack(window, 2, ((currentWindowWidth - CARD_WIDTH) / 2) + 4);
-  drawCardTemplate(window, 2, ((currentWindowWidth - CARD_WIDTH) / 2) - 4,
+  drawCardBack(window, layout.dealerRow, layout.dealerBackCol);
+  drawCardTemplate(window, layout.dealerRow, layout.dealerFaceCol,
                    dealerUpCard);
 
   // Draw player soft total
-  drawCardTemplate(window, 17, ((currentWindowWidth - CARD_WIDTH) / 2) - 3,
-                   aceCard);
-  drawCardTemplate(window, 14, ((currentWindowWidth - CARD_WIDTH) / 2) + 3,
+  drawCardTemplate(window, layout.playerBackRow, layout.playerBackCol,
                    playerCard);
+  drawCardTemplate(window, layout.playerFrontRow, layout.playerFrontCol,
+                   aceCard);
 
-  // Prompt
-  printCenteredText(window, 28, currentWindowWidth, "Hit, Stand, or Double?");
+  // Prompt, or the result of the last answer when there is no row to spare
+  // for it of its own
+  if (feedback != NULL && layout.feedbackRow == layout.promptRow) {
+    printCenteredText(window, layout.promptRow, feedback);
+  } else {
+    printCenteredText(window, layout.promptRow, "Hit, Stand, or Double?");
+    if (feedback != NULL)
+      printCenteredText(window, layout.feedbackRow, feedback);
+  }
 
   // Print User Actions
   //
@@ -78,14 +89,15 @@ static void drawTrainerWindow(WINDOW *window, int selection,
     if (i > 0)
       totalWidth += textSpacing;
   }
-  int col = (currentWindowWidth - totalWidth) / 2;
+  int col = (layout.width - totalWidth) / 2;
   if (col < 0)
     col = 0;
 
   for (int i = 0; i < numberOfUserActions; i++) {
     if (i == selection)
       wattron(window, A_STANDOUT);
-    mvwaddstr(window, getmaxy(window) * 3 / 4, col, softTotalActions[i]);
+    mvwaddnstr(window, layout.actionsRow, col, softTotalActions[i],
+               layout.width - col);
     if (i == selection)
       wattroff(window, A_STANDOUT);
     col += (int)strlen(softTotalActions[i]) +
@@ -94,26 +106,60 @@ static void drawTrainerWindow(WINDOW *window, int selection,
 
   // Print hints
   wattron(window, A_DIM);
-  printCenteredText(window, getmaxy(window) - 4, currentWindowWidth,
+  printCenteredText(window, layout.hintRow,
                     "h/l or left/right to move     Enter to select");
-  printCenteredText(window, getmaxy(window) - 3, currentWindowWidth,
-                    "q to quit");
+  if (layout.quitHintRow >= 0)
+    printCenteredText(window, layout.quitHintRow, "q to quit");
   wattroff(window, A_DIM);
+
   wrefresh(window);
 }
 
 int softTotalTrainer(WINDOW *window, Score *score, Settings *settings) {
-  int selection = 0, keyPress;
-  // Draw trainer window
+  int selection = 0, keyPress, running = 1, keepApplicationRunning = 1;
+
+  /* While a result is on screen the trainer waits for the player to
+   * acknowledge it before dealing again.  Holding it as state rather than
+   * blocking on a nested wgetch() is what lets a resize redraw the board with
+   * the result still on it. */
+  int awaitingAcknowledgement = 0;
+  char feedback[64] = "";
+
   Card dealerUpCard = generateDealerUpCard();
   Card playerCard = generatePlayerCard();
   Card aceCard = generateAceCard();
-  drawTrainerWindow(window, selection, getmaxx(window), dealerUpCard,
-                    playerCard, aceCard);
   keypad(window, TRUE);
 
-  // Get User Input
-  while ((keyPress = wgetch(window)) != 'q') {
+  while (running) {
+    if (!ensureUsableTerminal()) {
+      keepApplicationRunning = 0;
+      break;
+    }
+
+    fitTrainerWindow(window);
+    drawTrainerWindow(window, selection, dealerUpCard, playerCard, aceCard,
+                      awaitingAcknowledgement ? feedback : NULL);
+
+    keyPress = wgetch(window);
+
+    if (keyPress == 'q') {
+      running = 0;
+      continue;
+    }
+    if (keyPress == KEY_RESIZE) {
+      handleResize();
+      continue;
+    }
+
+    if (awaitingAcknowledgement) {
+      // Any other key clears the result and deals the next hand
+      awaitingAcknowledgement = 0;
+      dealerUpCard = generateDealerUpCard();
+      playerCard = generatePlayerCard();
+      selection = 0;
+      continue;
+    }
+
     switch (keyPress) {
     case 'h':
     case KEY_LEFT:
@@ -147,27 +193,20 @@ int softTotalTrainer(WINDOW *window, Score *score, Settings *settings) {
 
       score->total++;
       if (correctOption == selection) {
-        printCenteredText(window, 30, getmaxx(window), "Correct!");
         score->correct++;
-        wgetch(window);
+        snprintf(feedback, sizeof(feedback), "Correct!");
       } else {
-        mvwprintw(window, 30, 40, "Incorrect. The answer is: %s",
-                  softTotalActions[correctOption]);
-        wgetch(window);
+        snprintf(feedback, sizeof(feedback), "Incorrect. The answer is: %s",
+                 softTotalActions[correctOption]);
       }
-
-      dealerUpCard = generateDealerUpCard();
-      playerCard = generatePlayerCard();
-      selection = 0;
+      awaitingAcknowledgement = 1;
       break;
     }
     }
-    drawTrainerWindow(window, selection, getmaxx(window), dealerUpCard,
-                      playerCard, aceCard);
   }
 
   werase(window);
   wrefresh(window);
 
-  return 1;
-};
+  return keepApplicationRunning;
+}
